@@ -14,6 +14,7 @@ class CustomQWidget(QWidget):
 
 		button = QPushButton()
 		button.setIcon(QIcon("close.png"))
+		button.setMaximumWidth(24)
 
 		layout = QHBoxLayout()
 		layout.addWidget(label)
