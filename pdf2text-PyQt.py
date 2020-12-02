@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 import signal
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 # Custom widget for the list
@@ -20,10 +22,30 @@ class CustomQWidget(QWidget):
 		self.setLayout(layout)
 
 def addPdf():
-	textEdit.setPlainText("add Pdf")
+	dialog = QFileDialog()
+	dialog.setWindowTitle('Open PDF Files')
+	
+	filters = [ "Image files (*.png *.xpm *.jpg)",
+	"PDF files (*.pdf)",
+	"Any files (*)" ]
+	
+	dialog.setNameFilters(filters)
+	dialog.setDirectory(QDir.homePath()) #currentPath()
+	dialog.setFileMode(QFileDialog.ExistingFiles)
+	filename = None
+	if dialog.exec_() == QDialog.Accepted:
+		filenames = dialog.selectedFiles()
+		print(filenames)
+		
+		for filepath in filenames:
+			item = QListWidgetItem(listWidget)
+			item_widget = CustomQWidget(text=filepath)
+			item.setSizeHint(item_widget.sizeHint())
+			listWidget.addItem(item)
+			listWidget.setItemWidget(item, item_widget)
 	
 def exportTxt():
-	fo = open("name", "w+")
+	fo = open("name.txt", "w+")
 	fo.write(textEdit.toPlainText())
 	fo.close()
 
