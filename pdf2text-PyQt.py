@@ -19,6 +19,13 @@ class CustomQWidget(QWidget):
 
 		self.setLayout(layout)
 
+def addPdf():
+	textEdit.setPlainText("add Pdf")
+	
+def exportTxt():
+	fo = open("name", "w+")
+	fo.write(textEdit.toPlainText())
+	fo.close()
 
 if __name__ == '__main__':
 	app = QApplication([])
@@ -31,7 +38,9 @@ if __name__ == '__main__':
 
 	# --- Left side
 
-	layoutV1.addWidget(QPushButton("Add pdf"))
+	button_pdf = QPushButton("Add pdf")
+	layoutV1.addWidget(button_pdf)
+	button_pdf.clicked.connect(addPdf)
 	
 	# Create list
 	listWidget = QListWidget()
@@ -46,8 +55,9 @@ if __name__ == '__main__':
 		listWidget.setItemWidget(item, item_widget)
 	
 	# --- Right side
-	
-	layoutV2.addWidget(QPushButton('Export to txt'))
+	button_export = QPushButton('Export to txt')
+	layoutV2.addWidget(button_export)
+	button_export.clicked.connect(exportTxt)
 	
 	# Create textEdit
 	textEdit = QTextEdit()
