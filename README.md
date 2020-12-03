@@ -16,4 +16,5 @@ Now, install the PyQt5 package from pip3:
 
 > sudo pip3 install PyQt5
 
+Moreover, you also must install pytesseract:
 > pip3 install pytesseract

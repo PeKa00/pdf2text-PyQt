@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from pdf2image import convert_from_path 
 import signal
+import os
 
 try:
     from PIL import Image
@@ -17,19 +19,26 @@ class CustomQWidget(QWidget):
 	def __init__(self, parent=None, filepath=None):
 		super(CustomQWidget, self).__init__(parent)
 
-		label = QLabel(filepath)
+		label = QLabel(QFileInfo(filepath).fileName())
 
 		button = QPushButton()
 		button.setIcon(QIcon("close.png"))
 		button.setMaximumWidth(24)
 		
+		# PDF or IMG to TEXT conversion 
+		filetype = os.path.splitext(filepath)[1]
 		
-		# TODO we have to check if the path points to an image or PDF
-		# For a PDF convert the PDF to images and for every image convert to text -> append to self.content
-		# For an image directly convert to text and set self.content
+		self.content = "Content: \n"
 		
-		# Text conversion
-		self.content = "Content: \n" + pytesseract.image_to_string(Image.open(filepath))
+		if filetype == ".pdf":
+			# Store Pdf with convert_from_path function 
+			images = convert_from_path(filepath) 
+			for img in images: 
+				self.content += pytesseract.image_to_string(img, lang="deu")
+			
+		else:
+			# Text conversion
+			self.content += pytesseract.image_to_string(Image.open(filepath), lang="deu")
 
 		layout = QHBoxLayout()
 		layout.addWidget(label)
