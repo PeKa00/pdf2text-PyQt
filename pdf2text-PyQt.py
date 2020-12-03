@@ -61,7 +61,6 @@ class CustomQWidget(QWidget):
 		self.setLayout(layout)
 		
 def removeListItem(button_close):
-	# TODO .parent()
 	print(button_close.parent().content)
 	
 	item = button_close.parent().connected_item
@@ -105,10 +104,54 @@ def textEditChanged():
 	if item != None:
 		listWidget.itemWidget(item).content = textEdit.toPlainText()
 
+AllFiles = False
+
+class CustomDialog(QDialog):
+	def __init__(self, *args, **kwargs):
+		super(CustomDialog, self).__init__(*args, **kwargs)
+
+		self.setWindowTitle("Export to textfile")
+
+		self.b1 = QRadioButton("Export all files")
+		self.b1.setChecked(False)
+		self.b1.toggled.connect(self.onClicked)
+		self.b2 = QRadioButton("Export this file")
+		self.b2.setChecked(False)
+		self.b2.toggled.connect(self.onClicked)
+
+
+		buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+		self.buttonBox = QDialogButtonBox(buttons)
+		self.buttonBox.accepted.connect(self.accept)
+		self.buttonBox.rejected.connect(self.reject)
+
+		self.layout = QVBoxLayout()
+		self.layout.addWidget(self.b1)
+		self.layout.addWidget(self.b2)
+		self.layout.addWidget(self.buttonBox)
+		self.setLayout(self.layout)
+
+	def onClicked(self):
+		if self.b1.isChecked():
+			AllFiles = False
+		elif self.b2.isChecked():
+			AllFiles = True
+		print(AllFiles)
+
 def exportTxt():
-	fo = open("name.txt", "w+")
-	fo.write(textEdit.toPlainText())
-	fo.close()
+	dlg = CustomDialog()
+	
+	if dlg.exec_():
+		print("Success!")
+		# TODO export
+		fo = open("name.txt", "w+")
+		fo.write(textEdit.toPlainText())
+		fo.close()
+		
+	else:
+		print("Cancel!")
+
 
 if __name__ == '__main__':
 	app = QApplication([])
