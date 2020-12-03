@@ -14,16 +14,30 @@ import pytesseract
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+"""
+TODO
+
+Export -> window with all/single export, location
+Menu bar -> language, about...
+Convert as a backgound task
+
+
+"""
+
+
 # Custom widget for the list
 class CustomQWidget(QWidget):
-	def __init__(self, parent=None, filepath=None):
+	def __init__(self, parent=None, connected_item=None, filepath=None):
 		super(CustomQWidget, self).__init__(parent)
+
+		self.connected_item = connected_item
 
 		label = QLabel(QFileInfo(filepath).fileName())
 
-		button = QPushButton()
-		button.setIcon(QIcon("close.png"))
-		button.setMaximumWidth(24)
+		button_close = QPushButton()
+		button_close.setIcon(QIcon("close.png"))
+		button_close.setMaximumWidth(24)
+		button_close.clicked.connect(lambda: removeListItem(button_close))
 		
 		# PDF or IMG to TEXT conversion 
 		filetype = os.path.splitext(filepath)[1]
@@ -42,17 +56,26 @@ class CustomQWidget(QWidget):
 
 		layout = QHBoxLayout()
 		layout.addWidget(label)
-		layout.addWidget(button)
+		layout.addWidget(button_close)
 
 		self.setLayout(layout)
 		
-def removeListItem(status, button):
+def removeListItem(button_close):
 	# TODO .parent()
-	button.parent()
+	print(button_close.parent().content)
+	
+	item = button_close.parent().connected_item
+	
+	if item.isSelected():
+		textEdit.clear()
+
+	listWidget.removeItemWidget(item)
+	listWidget.takeItem(listWidget.indexFromItem(item).row())
 	
 def listItemClicked(item):
-	textEdit.setPlainText(listWidget.itemWidget(item).content)
-	
+	if item != None:
+		textEdit.setPlainText(listWidget.itemWidget(item).content)
+
 
 def addPdf():
 	dialog = QFileDialog()
@@ -72,11 +95,16 @@ def addPdf():
 		
 		for filepath in filenames:
 			item = QListWidgetItem(listWidget)
-			item_widget = CustomQWidget(filepath=filepath)
+			item_widget = CustomQWidget(connected_item=item, filepath=filepath)
 			item.setSizeHint(item_widget.sizeHint())
 			listWidget.addItem(item)
 			listWidget.setItemWidget(item, item_widget)
-	
+
+def textEditChanged():
+	item = listWidget.currentItem()
+	if item != None:
+		listWidget.itemWidget(item).content = textEdit.toPlainText()
+
 def exportTxt():
 	fo = open("name.txt", "w+")
 	fo.write(textEdit.toPlainText())
@@ -119,6 +147,9 @@ if __name__ == '__main__':
 	textEdit = QTextEdit()
 	textEdit.setPlainText("")
 	layoutV2.addWidget(textEdit)
+	
+	# Save changes at textEdit
+	textEdit.textChanged.connect(textEditChanged)
 	
 	# Add layouts
 	layoutH.addLayout(layoutV1)
