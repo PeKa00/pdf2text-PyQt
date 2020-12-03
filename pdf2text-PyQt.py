@@ -53,6 +53,14 @@ def exportTxt():
 if __name__ == '__main__':
 	app = QApplication([])
 	window = QWidget()
+	
+	window.setMinimumSize(500,300)
+	
+	# Move window to the screen center
+	qtRectangle = window.frameGeometry()
+	centerPoint = QDesktopWidget().availableGeometry().center()
+	qtRectangle.moveCenter(centerPoint)
+	window.move(qtRectangle.topLeft())
 
 	# Create layouts
 	layoutH = QHBoxLayout()
