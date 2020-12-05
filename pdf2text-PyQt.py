@@ -48,11 +48,11 @@ class CustomQWidget(QWidget):
 			# Store Pdf with convert_from_path function 
 			images = convert_from_path(filepath) 
 			for img in images: 
-				self.content += pytesseract.image_to_string(img, lang="deu")
+				self.content += pytesseract.image_to_string(img, lang=exportSettings['Language'])
 			
 		else:
 			# Text conversion
-			self.content += pytesseract.image_to_string(Image.open(filepath), lang="deu")
+			self.content += pytesseract.image_to_string(Image.open(filepath), lang=exportSettings['Language'])
 
 		layout = QHBoxLayout()
 		layout.addWidget(label)
@@ -104,7 +104,7 @@ def textEditChanged():
 	if item != None:
 		listWidget.itemWidget(item).content = textEdit.toPlainText()
 
-exportSettings = {'AllFiles': False, 'FilePath': None, 'FileName': "New.txt"}
+exportSettings = {'AllFiles': False, 'FilePath': None, 'FileName': "New.txt", 'Language': "deu"}
 
 class CustomDialog(QDialog):
 	def __init__(self, *args, **kwargs):
@@ -187,9 +187,18 @@ def exportTxt():
 			fo.write(Text)
 			fo.close()
 
-			
 	else:
 		print("Cancel!")
+
+def DeuLanguage():
+	global exportSettings
+	exportSettings['Language'] = "deu"
+	print(exportSettings['Language'])
+		
+def EngLanguage():
+	global exportSettings
+	exportSettings['Language'] = "eng"
+	print(exportSettings['Language'])
 
 
 if __name__ == '__main__':
@@ -205,6 +214,7 @@ if __name__ == '__main__':
 	window.move(qtRectangle.topLeft())
 
 	# Create layouts
+	layoutV = QVBoxLayout()
 	layoutH = QHBoxLayout()
 	layoutV1 = QVBoxLayout()
 	layoutV2 = QVBoxLayout()
@@ -225,6 +235,22 @@ if __name__ == '__main__':
 	layoutV2.addWidget(button_export)
 	button_export.clicked.connect(exportTxt)
 	
+		# Menubar
+	menubar = QMenuBar()
+	layoutV.addWidget(menubar)
+	menubar.addMenu("Info")
+	SettingsMenu = menubar.addMenu("Settings")
+	OpenButton = QAction("Open")
+	OpenButton.triggered.connect(addPdf)
+	SettingsMenu.addAction(OpenButton)
+	LanguageMenu = SettingsMenu.addMenu("Language")
+	DeuButton = QAction("Deutsch")
+	LanguageMenu.addAction(DeuButton)
+	DeuButton.triggered.connect(DeuLanguage)
+	EngButton = QAction("Englisch")
+	LanguageMenu.addAction(EngButton)
+	EngButton.triggered.connect(EngLanguage)
+
 	# Create textEdit
 	textEdit = QTextEdit()
 	textEdit.setPlainText("")
@@ -234,10 +260,11 @@ if __name__ == '__main__':
 	textEdit.textChanged.connect(textEditChanged)
 	
 	# Add layouts
+	layoutV.addLayout(layoutH)
 	layoutH.addLayout(layoutV1)
 	layoutH.addLayout(layoutV2)
 
-	window.setLayout(layoutH)
+	window.setLayout(layoutV)
 	
 	window.setWindowTitle("pdf2Text-PyQt")
 	window.show()
