@@ -104,7 +104,7 @@ def textEditChanged():
 	if item != None:
 		listWidget.itemWidget(item).content = textEdit.toPlainText()
 
-AllFiles = False
+exportSettings = {'AllFiles': False, 'FilePath': None, 'FileName': "New.txt"}
 
 class CustomDialog(QDialog):
 	def __init__(self, *args, **kwargs):
@@ -113,12 +113,19 @@ class CustomDialog(QDialog):
 		self.setWindowTitle("Export to textfile")
 
 		self.b1 = QRadioButton("Export all files")
-		self.b1.setChecked(False)
+		self.b1.setChecked(True)
 		self.b1.toggled.connect(self.onClicked)
 		self.b2 = QRadioButton("Export this file")
 		self.b2.setChecked(False)
 		self.b2.toggled.connect(self.onClicked)
+		
 
+		self.textBox = QLineEdit()
+		self.textBox.setPlaceholderText("file name")
+		self.textBox.textChanged.connect(self.textChanged)
+		
+		self.button_path = QPushButton("Select path")
+		self.button_path.clicked.connect(self.selectPath)
 
 		buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
@@ -129,26 +136,58 @@ class CustomDialog(QDialog):
 		self.layout = QVBoxLayout()
 		self.layout.addWidget(self.b1)
 		self.layout.addWidget(self.b2)
+		self.layout.addWidget(self.textBox)
+		self.layout.addWidget(self.button_path)
 		self.layout.addWidget(self.buttonBox)
 		self.setLayout(self.layout)
-
+		
 	def onClicked(self):
+		global exportSettings
 		if self.b1.isChecked():
-			AllFiles = False
+			exportSettings['AllFiles'] = False
 		elif self.b2.isChecked():
-			AllFiles = True
-		print(AllFiles)
+			exportSettings['AllFiles'] = True
+		print(exportSettings['AllFiles'])
+
+	def textChanged(self):
+		global exportSettings
+		exportSettings['FileName'] = self.textBox.text()
+		if exportSettings['FileName'].endswith(".txt") == False:
+			exportSettings['FileName'] += ".txt"
+	
+	def selectPath(self):
+		global exportSettings
+		
+		self.dir_path=QFileDialog.getExistingDirectory(self,"Choose Directory","~\\")
+		exportSettings['FilePath'] = self.dir_path
+		print(exportSettings['FilePath'])
 
 def exportTxt():
 	dlg = CustomDialog()
-	
+	Text = ""
+	print(exportSettings['AllFiles'])
 	if dlg.exec_():
 		print("Success!")
-		# TODO export
-		fo = open("name.txt", "w+")
-		fo.write(textEdit.toPlainText())
-		fo.close()
 		
+		# export one or all files
+		if exportSettings['AllFiles'] == False: 
+			fo = open((exportSettings['FilePath']+"/"+exportSettings['FileName']), "w+")
+			#Text = ""
+			for i in range(listWidget.count()):
+				item = listWidget.item(i)
+				Text += listWidget.itemWidget(item).content
+				print (Text)
+			fo.write(Text)
+			fo.close()
+		elif exportSettings['AllFiles'] == True:
+			fo = open(exportSettings['FileName'], "w+")
+			#Text = ""
+			print(Text)
+			Text = textEdit.toPlainText()
+			fo.write(Text)
+			fo.close()
+
+			
 	else:
 		print("Cancel!")
 
