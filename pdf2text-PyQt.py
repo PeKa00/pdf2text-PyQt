@@ -17,10 +17,10 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 """
 TODO
 
-Export -> window with all/single export, location
-Menu bar -> language, about...
-Convert as a backgound task
-
+ Done Export -> window with all/single export, location
+ Done Menu bar -> language, about...
+ Convert as a backgound task
+ Only show available Languages
 
 """
 
@@ -39,21 +39,6 @@ class CustomQWidget(QWidget):
 		button_close.setMaximumWidth(24)
 		button_close.clicked.connect(lambda: removeListItem(button_close))
 		
-		# PDF or IMG to TEXT conversion 
-		filetype = os.path.splitext(filepath)[1]
-		
-		self.content = "Content: \n"
-		
-		if filetype == ".pdf":
-			# Store Pdf with convert_from_path function 
-			images = convert_from_path(filepath) 
-			for img in images: 
-				self.content += pytesseract.image_to_string(img, lang=exportSettings['Language'])
-			
-		else:
-			# Text conversion
-			self.content += pytesseract.image_to_string(Image.open(filepath), lang=exportSettings['Language'])
-
 		layout = QHBoxLayout()
 		layout.addWidget(label)
 		layout.addWidget(button_close)
@@ -76,6 +61,85 @@ def listItemClicked(item):
 		textEdit.setPlainText(listWidget.itemWidget(item).content)
 
 
+class Worker(QObject):
+	finished = pyqtSignal()
+	intReady = pyqtSignal(int)
+
+	def __init__(self, filepath, widget):
+		super().__init__()
+	
+		self.filepath = filepath
+		self.widget = widget
+
+	@pyqtSlot()
+	def proc_convert_to_text(self):
+		# PDF or IMG to TEXT conversion 
+		filetype = os.path.splitext(self.filepath)[1]
+		
+		print("Start Converting...")
+
+		self.widget.content = ""
+
+		if filetype == ".pdf":
+			# Store Pdf with convert_from_path function 
+			images = convert_from_path(self.filepath) 
+			for img in images: 
+				self.widget.content += pytesseract.image_to_string(img, lang=exportSettings['Language'])
+
+		else:
+			# Text conversion
+			self.widget.content += pytesseract.image_to_string(Image.open(self.filepath), lang=exportSettings['Language'])
+
+		print("Done Converting.")
+
+		self.finished.emit()
+
+
+class PopUpProgressB(QDialog):
+
+	def __init__(self, filenames):
+		super().__init__()
+		self.pbar = QProgressBar(self)
+		self.pbar.setGeometry(30, 40, 500, 75)
+		self.pbar.setMaximum(len(filenames))
+		self.count = 0
+		self.layout = QVBoxLayout()
+		self.layout.addWidget(self.pbar)
+		self.setLayout(self.layout)
+		self.setGeometry(300, 300, 550, 100)
+		self.setWindowTitle('Progress Bar')
+		self.show()
+		
+		self.threads = []
+		self.objs = []
+
+		for filepath in filenames:
+		
+			item = QListWidgetItem(listWidget)
+			item_widget = CustomQWidget(connected_item=item, filepath=filepath)
+			item.setSizeHint(item_widget.sizeHint())
+			listWidget.addItem(item)
+			listWidget.setItemWidget(item, item_widget)
+
+			obj = Worker(filepath, item_widget)
+			thread = QThread()
+			
+			obj.moveToThread(thread)
+			obj.finished.connect(thread.quit)
+			obj.finished.connect(self.thread_finished)
+			thread.started.connect(obj.proc_convert_to_text)
+			thread.start()
+			
+			self.threads.append(thread)
+			self.objs.append(obj)
+
+	def thread_finished(self):
+		self.count += 1
+		self.pbar.setValue(self.count)
+		
+		if (self.count >= self.pbar.maximum()):
+			self.hide()
+			
 def addPdf():
 	dialog = QFileDialog()
 	dialog.setWindowTitle('Open PDF Files')
@@ -90,21 +154,17 @@ def addPdf():
 	filename = None
 	if dialog.exec_() == QDialog.Accepted:
 		filenames = dialog.selectedFiles()
-		print(filenames)
-		
-		for filepath in filenames:
-			item = QListWidgetItem(listWidget)
-			item_widget = CustomQWidget(connected_item=item, filepath=filepath)
-			item.setSizeHint(item_widget.sizeHint())
-			listWidget.addItem(item)
-			listWidget.setItemWidget(item, item_widget)
+		print("Files:" + str(filenames))
+
+		popup = PopUpProgressB(filenames)
+		popup.exec()
 
 def textEditChanged():
 	item = listWidget.currentItem()
 	if item != None:
 		listWidget.itemWidget(item).content = textEdit.toPlainText()
 
-exportSettings = {'AllFiles': False, 'FilePath': None, 'FileName': "New.txt", 'Language': "deu"}
+exportSettings = {'AllFiles': False, 'FilePath': None, 'FileName': "New.txt", 'Language': "eng"}
 
 class CustomDialog(QDialog):
 	def __init__(self, *args, **kwargs):
